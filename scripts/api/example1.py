@@ -1,5 +1,20 @@
 #!/usr/bin/python3
 
+#####################################################################
+#
+# This is an example Python script that performs some basic operations
+# in an Uyuni server using the XMLRPC Uyuni API.
+#
+# * List registered clients in the Uyuni server.
+# * Delete test client if already registered.
+# * Bootstrap test client as minion using SSH
+# * Schedule "highstate" action and remote command execution
+# * Check the results from the actions
+#
+# Author: Pablo Suárez Hernández <psuarezhernandez@suse.de>
+#
+#####################################################################
+
 import time
 import xmlrpc.client as xmlrpclib
 
@@ -15,13 +30,18 @@ client = xmlrpclib.Server(UYUNI_API_URL, verbose=0)
 # Login and get session key
 key = client.auth.login(UYUNI_API_LOGIN, UYUNI_API_PASSWORD)
 
+#####################################################################
+
 # List registered systems
 print("--- List of Systems ---")
 systems_list = client.system.listSystems(key)
 systems_ids = {k:v for k,v in map(lambda x: (x['name'], x['id']), systems_list)}
+
 for system in systems_ids:
    print("* {} - {}".format(system, systems_ids[system]))
 print()
+
+#####################################################################
 
 print("--- Recreating systems ---")
 if TEST_CLIENT in systems_ids:
@@ -45,6 +65,8 @@ while not TEST_CLIENT in systems_ids:
 print("* Registration finished successfully!") 
 print()
 
+#####################################################################
+
 # Execute some actions on the registered system
 print("--- Scheduling actions ---")
 my_actions = []
@@ -62,6 +84,8 @@ while [act for act in client.schedule.listInProgressActions(key) if act["id"] in
 print("* Actions finished!")
 print()
 
+#####################################################################
+
 # Check the results from the previous actions
 print("--- Checking action results ---")
 for act in my_actions:
@@ -77,6 +101,8 @@ for act in my_actions:
        print("* FAIL: {}".format(failed_systems))
    else:
        print("* Error")
+print()
+
+#####################################################################
 
 client.auth.logout(key)
-print()
